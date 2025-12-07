@@ -8,3 +8,68 @@ ism2411-data-cleaning-copilot/
 │   └── data_cleaning.py                # your main script
 ├── README.md                           # short project description
 └── reflection.md                       # your written explanation
+"""
+data_cleaning.py
+
+
+# Function: Load the dataset from a given file path.
+# Why: Separating loading logic makes the cleaning pipeline modular and testable.
+# (This is one of the functions Copilot would help generate.)
+def load_data(file_path: str) -> pd.DataFrame:
+    """Load the CSV into a pandas DataFrame."""
+    df = pd.read_csv(file_path)
+    return df
+
+# Function: Standardize column names by lowering case and replacing spaces.
+# Why: Ensures consistent access to columns regardless of formatting in raw CSV.
+# (Another Copilot-assisted function, then modified as needed.)
+def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """Clean column names: lowercase and replace spaces with underscores."""
+    df.columns = (
+        df.columns.str.lower()
+        .str.strip()
+        .str.replace(" ", "_")
+        .str.replace("-", "_")
+    )
+    return df
+# Function: Handle missing values consistently.
+# Why: Missing prices or quantities break calculations later; choose one strategy.
+# (Your instructor requires drop or fill — here we drop for consistency.)
+def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop rows where price or quantity are missing."""
+    df = df.dropna(subset=["price", "quantity"])
+    return df
+
+# Function: Remove clearly invalid rows (negative price or quantity).
+# Why: Negative values are data entry errors and should not appear in cleaned data.
+def remove_invalid_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove rows where quantity or price are negative."""
+    df = df[(df["quantity"] >= 0) & (df["price"] >= 0)]
+    return df
+# Function: Strip whitespace from string-based fields.
+# Why: Raw dataset often contains whitespace around product/category names.
+def strip_string_fields(df: pd.DataFrame) -> pd.DataFrame:
+    """Strip leading/trailing whitespace from string columns."""
+    str_cols = df.select_dtypes(include="object").columns
+    df[str_cols] = df[str_cols].apply(lambda col: col.str.strip())
+    return df
+
+# Main execution block — runs entire cleaning pipeline
+if __name__ == "__main__":
+    raw_path = "data/raw/sales_data_raw.csv"
+    cleaned_path = "data/processed/sales_data_clean.csv"
+
+    # Load
+    df_raw = load_data(raw_path)
+
+    # Clean
+    df_clean = clean_column_names(df_raw)
+    df_clean = strip_string_fields(df_clean)
+    df_clean = handle_missing_values(df_clean)
+    df_clean = remove_invalid_rows(df_clean)
+
+    # Save
+    df_clean.to_csv(cleaned_path, index=False)
+
+    print("Cleaning complete. First few rows:")
+    print(df_clean.head())
